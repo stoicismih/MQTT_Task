@@ -1,0 +1,384 @@
+[
+  {
+    "id": "tab_chat",
+    "type": "tab",
+    "label": "MQTT Chat A-B",
+    "disabled": false,
+    "info": "Hai client A va B chat qua MQTT. A gui chat/A, B gui chat/B. Broker: localhost:1883"
+  },
+  {
+    "id": "broker_a",
+    "type": "mqtt-broker",
+    "name": "Broker (Client A)",
+    "broker": "localhost",
+    "port": "1883",
+    "clientid": "nodered-client-A",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "autoUnsubscribe": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "birthMsg": {},
+    "closeTopic": "",
+    "closeQos": "0",
+    "closePayload": "",
+    "closeMsg": {},
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": "",
+    "willMsg": {},
+    "userProps": "",
+    "sessionExpiry": ""
+  },
+  {
+    "id": "broker_b",
+    "type": "mqtt-broker",
+    "name": "Broker (Client B)",
+    "broker": "localhost",
+    "port": "1883",
+    "clientid": "nodered-client-B",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "autoUnsubscribe": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "birthMsg": {},
+    "closeTopic": "",
+    "closeQos": "0",
+    "closePayload": "",
+    "closeMsg": {},
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": "",
+    "willMsg": {},
+    "userProps": "",
+    "sessionExpiry": ""
+  },
+  {
+    "id": "a_comment",
+    "type": "comment",
+    "z": "tab_chat",
+    "name": "=== CLIENT A: gui chat/A, nhan chat/B ===",
+    "info": "",
+    "x": 240,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "a_inject",
+    "type": "inject",
+    "z": "tab_chat",
+    "name": "BAM DE CHAY (A gui, B tu tra loi)",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "Xin chao, thu MQTT!",
+    "payloadType": "str",
+    "x": 150,
+    "y": 250,
+    "wires": [
+      [
+        "a_build"
+      ]
+    ]
+  },
+  {
+    "id": "a_build",
+    "type": "function",
+    "z": "tab_chat",
+    "name": "A dong goi tin",
+    "func": "const text = msg.payload;\n\nmsg.payload = {\n    id: Date.now(),\n    from: \"A\",\n    text: text,\n    sentAt: new Date().toISOString()\n};\n\nmsg.topic = \"chat/A\";\nmsg.qos = 1;\nmsg.retain = false;\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 100,
+    "wires": [
+      [
+        "a_out",
+        "a_dbg_sent"
+      ]
+    ]
+  },
+  {
+    "id": "a_out",
+    "type": "mqtt out",
+    "z": "tab_chat",
+    "name": "A publish chat/A",
+    "topic": "chat/A",
+    "qos": "1",
+    "retain": "false",
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "broker_a",
+    "x": 600,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "a_dbg_sent",
+    "type": "debug",
+    "z": "tab_chat",
+    "name": "[A] Da gui",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload.text",
+    "targetType": "msg",
+    "statusVal": "payload.text",
+    "statusType": "auto",
+    "x": 590,
+    "y": 130,
+    "wires": []
+  },
+  {
+    "id": "a_in",
+    "type": "mqtt in",
+    "z": "tab_chat",
+    "name": "A subscribe chat/B",
+    "topic": "chat/B",
+    "qos": "1",
+    "datatype": "auto-detect",
+    "broker": "broker_a",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 150,
+    "y": 200,
+    "wires": [
+      [
+        "a_handle"
+      ]
+    ]
+  },
+  {
+    "id": "a_handle",
+    "type": "function",
+    "z": "tab_chat",
+    "name": "A xu ly tin nhan",
+    "func": "const p = msg.payload;\n\nif (typeof p !== \"object\" || p === null) {\n    node.warn(\"Tin nhan khong phai JSON: \" + p);\n    return null;\n}\n\nmsg.payload = {\n    topic: msg.topic,\n    from: p.from,\n    text: p.text,\n    latencyMs: Date.now() - new Date(p.sentAt).getTime(),\n    receivedAt: new Date().toISOString()\n};\n\nnode.status({ fill: \"green\", shape: \"dot\", text: \"nhan tu \" + p.from + \": \" + p.text });\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 200,
+    "wires": [
+      [
+        "a_dbg_recv"
+      ]
+    ]
+  },
+  {
+    "id": "a_dbg_recv",
+    "type": "debug",
+    "z": "tab_chat",
+    "name": "[A] Da nhan",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "payload.text",
+    "statusType": "auto",
+    "x": 640,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "b_comment",
+    "type": "comment",
+    "z": "tab_chat",
+    "name": "=== CLIENT B: nhan chat/A, tu tra loi len chat/B ===",
+    "info": "",
+    "x": 240,
+    "y": 340,
+    "wires": []
+  },
+  {
+    "id": "b_reply",
+    "type": "function",
+    "z": "tab_chat",
+    "name": "B soan tin tra loi",
+    "func": "// Chi tra loi tin cua A, tranh vong lap vo han\nif (msg.payload.from !== \"A\") return null;\n\nmsg.payload = \"B da nhan: \" + msg.payload.text;\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 650,
+    "y": 560,
+    "wires": [
+      [
+        "b_delay"
+      ]
+    ]
+  },
+  {
+    "id": "b_delay",
+    "type": "delay",
+    "z": "tab_chat",
+    "name": "B doi 1 giay roi tra loi",
+    "pauseType": "delay",
+    "timeout": "1",
+    "timeoutUnits": "seconds",
+    "rate": "1",
+    "nbRateUnits": "1",
+    "rateUnits": "second",
+    "randomFirst": "1",
+    "randomLast": "5",
+    "randomUnits": "seconds",
+    "drop": false,
+    "allowrate": false,
+    "outputs": 1,
+    "x": 880,
+    "y": 560,
+    "wires": [
+      [
+        "b_build"
+      ]
+    ]
+  },
+  {
+    "id": "b_build",
+    "type": "function",
+    "z": "tab_chat",
+    "name": "B dong goi tin",
+    "func": "const text = msg.payload;\n\nmsg.payload = {\n    id: Date.now(),\n    from: \"B\",\n    text: text,\n    sentAt: new Date().toISOString()\n};\n\nmsg.topic = \"chat/B\";\nmsg.qos = 1;\nmsg.retain = false;\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 400,
+    "wires": [
+      [
+        "b_out",
+        "b_dbg_sent"
+      ]
+    ]
+  },
+  {
+    "id": "b_out",
+    "type": "mqtt out",
+    "z": "tab_chat",
+    "name": "B publish chat/B",
+    "topic": "chat/B",
+    "qos": "1",
+    "retain": "false",
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "broker_b",
+    "x": 600,
+    "y": 380,
+    "wires": []
+  },
+  {
+    "id": "b_dbg_sent",
+    "type": "debug",
+    "z": "tab_chat",
+    "name": "[B] Da gui",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload.text",
+    "targetType": "msg",
+    "statusVal": "payload.text",
+    "statusType": "auto",
+    "x": 590,
+    "y": 430,
+    "wires": []
+  },
+  {
+    "id": "b_in",
+    "type": "mqtt in",
+    "z": "tab_chat",
+    "name": "B subscribe chat/A",
+    "topic": "chat/A",
+    "qos": "1",
+    "datatype": "auto-detect",
+    "broker": "broker_b",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 150,
+    "y": 500,
+    "wires": [
+      [
+        "b_handle"
+      ]
+    ]
+  },
+  {
+    "id": "b_handle",
+    "type": "function",
+    "z": "tab_chat",
+    "name": "B xu ly tin nhan",
+    "func": "const p = msg.payload;\n\nif (typeof p !== \"object\" || p === null) {\n    node.warn(\"Tin nhan khong phai JSON: \" + p);\n    return null;\n}\n\nmsg.payload = {\n    topic: msg.topic,\n    from: p.from,\n    text: p.text,\n    latencyMs: Date.now() - new Date(p.sentAt).getTime(),\n    receivedAt: new Date().toISOString()\n};\n\nnode.status({ fill: \"green\", shape: \"dot\", text: \"nhan tu \" + p.from + \": \" + p.text });\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 500,
+    "wires": [
+      [
+        "b_dbg_recv",
+        "b_reply"
+      ]
+    ]
+  },
+  {
+    "id": "b_dbg_recv",
+    "type": "debug",
+    "z": "tab_chat",
+    "name": "[B] Da nhan",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "payload.text",
+    "statusType": "auto",
+    "x": 640,
+    "y": 500,
+    "wires": []
+  }
+]
